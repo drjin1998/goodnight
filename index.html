@@ -1,0 +1,444 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chúc Trang Ngủ Ngon</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(180deg, #1a1a3d, #4b0082);
+            font-family: 'Dancing Script', cursive;
+            color: white;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            z-index: 1;
+            display: none; /* Ẩn ban đầu */
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+        .container.show {
+            display: block;
+            opacity: 1;
+        }
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            animation: fadeIn 2s ease-in-out, sparkle 2s infinite;
+        }
+        p {
+            font-size: 1.5em;
+            margin: 10px 0;
+            animation: slideIn 3s ease-in-out, sparkle 2s infinite;
+        }
+        .heart {
+            color: #ff4d4d;
+            font-size: 2em;
+            animation: pulse 1.5s infinite;
+        }
+        .kiss {
+            position: relative;
+            display: inline-block;
+            font-size: 2em;
+            transition: all 1s ease-in-out;
+        }
+        .kiss.move {
+            position: absolute;
+            top: 20%; /* Di chuyển lên trên nội dung */
+            left: 50%;
+            transform: translate(-50%, 0);
+            font-size: 4em; /* Phóng to */
+            z-index: 2;
+        }
+        .kiss-lips {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            color: #ff69b4;
+            text-shadow: 0 0 10px rgba(255, 105, 180, 0.8);
+            animation: kissPulse 0.5s ease-in-out 3; /* Lặp 3 lần */
+            opacity: 0;
+        }
+        .moon {
+            position: absolute;
+            top: 10%;
+            right: 10%;
+            font-size: 5em;
+            color: #f0e68c;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+            animation: moonGlow 3s ease-in-out infinite, moonSway 10s ease-in-out infinite;
+            z-index: 0;
+        }
+        .bright-star {
+            position: absolute;
+            top: 30%;
+            left: 20%;
+            font-size: 5em; /* To nhất */
+            color: #fff;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 1), 0 0 50px rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            animation: starGlow 1.5s ease-in-out infinite;
+            z-index: 2;
+            transition: all 1s ease-in-out;
+        }
+        .bright-star.move {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .bright-star.hidden {
+            display: none;
+        }
+        .extra-star {
+            position: absolute;
+            font-size: 2.5em; /* Nhỏ hơn ngôi sao chính */
+            color: #fff;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
+            animation: starGlow 2s ease-in-out infinite;
+            cursor: pointer;
+            z-index: 0;
+        }
+        .extra-star.hidden {
+            display: none;
+        }
+        .particle {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.8);
+            animation: fireworkBurst 1.5s ease-out forwards;
+        }
+        .heart-particle {
+            position: absolute;
+            color: #ff4d4d;
+            font-size: 1.2em;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            animation: fireworkBurst 1.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        @keyframes slideIn {
+            0% { transform: translateY(50px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        @keyframes moonGlow {
+            0% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.8); }
+            50% { text-shadow: 0 0 30px rgba(255, 255, 255, 1); }
+            100% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.8); }
+        }
+        @keyframes moonSway {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(10px); }
+            100% { transform: translateY(0); }
+        }
+        @keyframes sparkle {
+            0% { text-shadow: 0 0 5px rgba(255, 255, 255, 0.5); }
+            50% { text-shadow: 0 0 10px rgba(255, 255, 255, 1), 0 0 15px rgba(255, 255, 255, 0.8); }
+            100% { text-shadow: 0 0 5px rgba(255, 255, 255, 0.5); }
+        }
+        @keyframes starGlow {
+            0% { text-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.3); }
+            50% { text-shadow: 0 0 20px rgba(255, 255, 255, 1), 0 0 30px rgba(255, 255, 255, 0.8); }
+            100% { text-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.3); }
+        }
+        @keyframes fireworkBurst {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(var(--tx), var(--ty)) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--tx), var(--ty)) scale(0);
+            }
+        }
+        @keyframes kissPulse {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
+        }
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 5s infinite;
+        }
+        @keyframes twinkle {
+            0% { opacity: 0.2; }
+            50% { opacity: 1; }
+            100% { opacity: 0.2; }
+        }
+        .floating-heart {
+            position: absolute;
+            color: #ff4d4d;
+            font-size: 1.5em;
+            pointer-events: none;
+            animation: floatUp 4s ease-in forwards;
+        }
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        .shooting-star {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.8);
+            animation: shoot 2s linear forwards;
+        }
+        .shooting-star::after {
+            content: '';
+            position: absolute;
+            width: 50px;
+            height: 2px;
+            background: linear-gradient(to left, rgba(255, 255, 255, 0.8), transparent);
+            left: -50px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        @keyframes shoot {
+            0% {
+                transform: translateX(-100vw) translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(100vw) translateY(20vh);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="moon">🌙</div>
+    <div class="bright-star" id="brightStar">✨</div>
+    <div class="extra-star" style="top: 25%; left: 70%;" id="extraStar1">✨</div>
+    <div class="extra-star" style="top: 65%; left: 30%;" id="extraStar2">✨</div>
+    <div class="extra-star" style="top: 45%; left: 85%;" id="extraStar3">✨</div>
+    <div class="extra-star" style="top: 75%; left: 15%;" id="extraStar4">✨</div>
+    <div class="container" id="message">
+        <h1>Chúc Trang yêu ngủ ngon! 🥰</h1>
+        <p>Chúc em một giấc mơ ngọt ngào như tình yêu của anh.</p>
+        <p>Ngủ ngoan và mơ về anh nhé, Trang ơi! <span class="heart">♥</span></p>
+        <p>Anh yêu em nhiều lắm! <span class="kiss" id="kiss">😘</span></p>
+    </div>
+    <script>
+        // Tạo hiệu ứng sao lấp lánh nền
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 50; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.width = `${Math.random() * 3 + 1}px`;
+            star.style.height = star.style.width;
+            star.style.left = `${Math.random() * 100}%`;
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.animationDelay = `${Math.random() * 5}s`;
+            starsContainer.appendChild(star);
+        }
+
+        // Tạo trái tim bay tự động
+        function createFloatingHeart() {
+            const heart = document.createElement('div');
+            heart.className = 'floating-heart';
+            heart.innerHTML = '♥';
+            heart.style.left = `${Math.random() * 100}%`;
+            heart.style.bottom = '0';
+            heart.style.animationDelay = `${Math.random() * 2}s`;
+            document.body.appendChild(heart);
+            setTimeout(() => heart.remove(), 4000);
+        }
+
+        // Tạo trái tim khi click bất kỳ đâu
+        document.addEventListener('click', (e) => {
+            const heart = document.createElement('div');
+            heart.className = 'floating-heart';
+            heart.innerHTML = '♥';
+            heart.style.left = `${e.clientX}px`;
+            heart.style.top = `${e.clientY}px`;
+            document.body.appendChild(heart);
+            setTimeout(() => heart.remove(), 4000);
+        });
+
+        // Tạo sao băng
+        function createShootingStar() {
+            const shootingStar = document.createElement('div');
+            shootingStar.className = 'shooting-star';
+            shootingStar.style.top = `${Math.random() * 30}%`;
+            shootingStar.style.animationDelay = `${Math.random() * 1}s`;
+            document.body.appendChild(shootingStar);
+            setTimeout(() => shootingStar.remove(), 2000);
+        }
+
+        // Hiệu ứng nổ tung thành trái tim (pháo hoa) cho ngôi sao chính
+        function createHeartParticles(x, y) {
+            const colors = ['#ff4d4d', '#ffd700', '#ffffff', '#ff69b4']; // Đỏ, vàng, trắng, hồng
+            for (let i = 0; i < 15; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'heart-particle';
+                particle.innerHTML = '♥';
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+                const angle = (i / 15) * 2 * Math.PI; // Phân bố đều theo hình tròn
+                const distance = 50 + Math.random() * 30; // Khoảng cách ngẫu nhiên
+                particle.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
+                particle.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
+                particle.style.color = colors[Math.floor(Math.random() * colors.length)];
+                document.body.appendChild(particle);
+                setTimeout(() => particle.remove(), 1500);
+            }
+        }
+
+        // Hiệu ứng nổ tung thành mảnh vụn (pháo hoa) cho ngôi sao phụ
+        function createParticles(x, y) {
+            const colors = ['#ff4d4d', '#ffd700', '#ffffff', '#ff69b4'];
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+                const angle = (i / 20) * 2 * Math.PI; // Phân bố đều theo hình tròn
+                const distance = 50 + Math.random() * 30;
+                particle.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
+                particle.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                document.body.appendChild(particle);
+                setTimeout(() => particle.remove(), 1500);
+            }
+        }
+
+        // Tạo hiệu ứng môi hôn (💋) lặp 3 lần
+        function createKissEffect(kissElement) {
+            const lips = document.createElement('div');
+            lips.className = 'kiss-lips';
+            lips.innerHTML = '💋';
+            kissElement.appendChild(lips);
+            setTimeout(() => lips.remove(), 1500); // Xóa sau khi hoàn thành 3 lần lặp (0.5s x 3)
+        }
+
+        // Hiển thị nội dung chúc khi click vào ngôi sao sáng chính
+        const brightStar = document.getElementById('brightStar');
+        const message = document.getElementById('message');
+        const kiss = document.getElementById('kiss');
+        brightStar.addEventListener('click', () => {
+            brightStar.classList.add('move');
+            setTimeout(() => {
+                const rect = brightStar.getBoundingClientRect();
+                const x = rect.left + rect.width / 2;
+                const y = rect.top + rect.height / 2;
+                createHeartParticles(x, y);
+                brightStar.classList.add('hidden');
+                message.classList.add('show');
+                // Chờ hiệu ứng chữ hoàn tất (3s) + 2s, sau đó chạy hiệu ứng mặt hôn
+                setTimeout(() => {
+                    kiss.classList.add('move');
+                    // Bắt đầu hiệu ứng môi hôn sau khi di chuyển xong
+                    setTimeout(() => {
+                        createKissEffect(kiss);
+                    }, 1000);
+                }, 5000); // 3s (hiệu ứng chữ) + 2s
+            }, 1000); // Hiển thị lời chúc sau khi ngôi sao di chuyển và nổ (1 giây)
+        });
+
+        // Hiệu ứng nổ tung cho các ngôi sao phụ
+        const extraStars = document.querySelectorAll('.extra-star');
+        extraStars.forEach(star => {
+            star.addEventListener('click', (e) => {
+                const rect = star.getBoundingClientRect();
+                const x = rect.left + rect.width / 2;
+                const y = rect.top + rect.height / 2;
+                createParticles(x, y);
+                star.classList.add('hidden');
+            });
+        });
+
+        // Tạo trái tim tự động mỗi 2 giây
+        setInterval(createFloatingHeart, 2000);
+
+        // Tạo sao băng ngẫu nhiên mỗi 3-7 giây
+        function scheduleShootingStar() {
+            createShootingStar();
+            setTimeout(scheduleShootingStar, 3000 + Math.random() * 4000);
+        }
+        scheduleShootingStar();
+    </script>
+</body>
+</html>
